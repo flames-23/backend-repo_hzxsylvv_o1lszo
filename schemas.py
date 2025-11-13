@@ -1,5 +1,5 @@
 """
-Database Schemas for the CCTV App
+Database Schemas for the CCTV Commerce App
 
 Each Pydantic model represents a MongoDB collection. The collection name is the
 lowercase of the class name (e.g., User -> "user").
@@ -17,7 +17,37 @@ class User(BaseModel):
     role: str = Field("customer", description="Role: customer | admin | technician")
     is_active: bool = Field(True, description="Whether user is active")
 
-# Camera registered to a customer account
+# Product sold by the CCTV company
+class Product(BaseModel):
+    name: str = Field(..., description="Product name")
+    description: Optional[str] = Field(None, description="Long description")
+    category: Optional[str] = Field(None, description="camera | accessory | system | dvr | nvr | cable | service")
+    price: float = Field(..., ge=0, description="Unit price in USD")
+    images: List[str] = Field(default_factory=list, description="Image URLs")
+    stock: int = Field(0, ge=0, description="Units in stock")
+    featured: bool = Field(False, description="Featured on homepage")
+    specs: Optional[dict] = Field(default_factory=dict, description="Key-value specs")
+
+# Order and items
+class OrderItem(BaseModel):
+    product_id: str = Field(..., description="Product _id as string")
+    name: str
+    price: float
+    qty: int
+    total: float
+
+class Order(BaseModel):
+    user_id: str = Field(..., description="Buyer user _id")
+    items: List[OrderItem]
+    subtotal: float
+    tax: float
+    total: float
+    status: str = Field("placed", description="placed | paid | processing | shipped | completed | cancelled")
+    address: Optional[str] = None
+    payment_id: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+# Camera registered to a customer account (optional for existing app users)
 class Camera(BaseModel):
     user_id: str = Field(..., description="Owner user _id as string")
     name: str = Field(..., description="Camera friendly name")
@@ -53,7 +83,7 @@ class ServiceRequest(BaseModel):
     status: str = Field("pending", description="pending | scheduled | in_progress | completed | cancelled")
     assigned_to: Optional[str] = Field(None, description="Technician user _id")
 
-# Subscription for cloud recording/alerts
+# Subscription for cloud recording/alerts (for existing app users)
 class Subscription(BaseModel):
     user_id: str = Field(..., description="Subscriber user _id")
     plan: str = Field(..., description="basic | standard | pro")
